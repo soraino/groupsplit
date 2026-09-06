@@ -1,34 +1,43 @@
 import {
-  Autocomplete,
   Box,
   Button,
-  FilledInput,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
   Modal,
   TextField,
   Typography,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import dayjs from "dayjs";
+import CreateableAutocomplete from "./CreatableAutocomplete";
+import CurrencyField from "./CurrencyField";
 
 export default function ExpenseModal({ open, expense, category, onClose }) {
-  const expenseName = useRef("");
-  const totalExepnse = useRef("");
+  const expenseDesc = useRef(expense?.description ?? "");
+  const totalExpense = useRef(expense?.total ?? 0);
+  const expenseCategory = useRef(expense?.category ?? null);
+  const expenseDate = useRef(expense?.date);
 
+  const [disable, setDisable] = useState(false)
   const handleClose = () => {
-    onClose();
+    onClose(null);
+  };
+
+  const handleSave = () => {
+    setDisable(true)
+    const expense = {
+      description: expenseDesc.current,
+      total: totalExpense.current,
+      category: expenseCategory.current,
+      date: expenseDate.current,
+      isExpense: true
+    }
+    onClose(expense);
   };
 
   return (
     <Modal
       open={open}
-      onClose={() => {
-        setOpen(false);
-      }}
     >
       <Box
         sx={{
@@ -46,63 +55,64 @@ export default function ExpenseModal({ open, expense, category, onClose }) {
         <Typography variant="h6" sx={{ marginBottom: 2 }}>
           Add new expense
         </Typography>
-
-        <TextField
-          fullWidth
-          label="Category"
-          variant="outlined"
-          sx={{ marginBottom: 1 }}
-          onChange={(e) => {
-            expenseName.current = e.target.value;
-          }}
-        />
-        <Autocomplete
-          freeSolo
-          resetHighlightOnMouseLeave
+        <CreateableAutocomplete
+          disabled={disable}
+          defaultValue={expenseCategory.current}
           options={category}
-          renderInput={(params) => <TextField {...params} label="Category" />}
-          getOptionLabel={(option) =>
-            typeof option === "string" ? option : option.title
-          }
-          // this demo demonstrates how the value parameter can be either an object (same type as option) or a string
-          // it could become a string if, for example, you press "Enter" in the input field
-          isOptionEqualToValue={(option, value) => {
-            if (typeof value === "string") {
-              return option.title === value;
-            }
-            return option.title === value.title;
-          }}
-        />
+          onChange={(val) => {
+            expenseCategory.current = val
+          }} />
 
         <TextField
           fullWidth
           label="Expense description"
           variant="outlined"
           sx={{ marginBottom: 1 }}
+          disabled={disable}
+          defaultValue={expenseDesc.current}
           onChange={(e) => {
-            expenseName.current = e.target.value;
-          }}
-        />
-        <TextField
-          label="Total"
-          variant="outlined"
-          sx={{ marginBottom: 1 }}
-          onChange={(e) => {
-            totalExepnse.current = e.target.value;
+            expenseDesc.current = e.target.value;
           }}
         />
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker />
+          <DatePicker
+            disabled={disable}
+            defaultValue={expenseDate.current != null? dayjs(expenseDate.current) : null}
+            sx={{ marginBottom: 1 }}
+            onChange={val => {
+              expenseDate.current = val.toJSON()
+            }}
+          />
         </LocalizationProvider>
-        <Button
-          sx={{ float: "right", marginTop: 1 }}
-          variant="contained"
-          onClick={async () => {
-            setOpen(false);
+        <CurrencyField
+          label="Total"
+          disabled={disable}
+          step={0.1}
+          min={0}
+          defaultValue={totalExpense.current}
+          onValueChange={(val, e) => {
+            totalExpense.current = val;
           }}
-        >
-          Add Expense
-        </Button>
+        />
+        <Box sx={{ marginTop: 4 }}>
+
+          <Button
+            disabled={disable}
+            sx={{ float: "right" }}
+            variant="contained"
+            onClick={handleSave}
+          >
+            {expense == null ? "Add Expense": "Update Expense"}
+          </Button>
+          <Button
+            disabled={disable}
+            sx={{ float: "right", marginRight: 1 }}
+            variant="outlined"
+            onClick={handleClose}
+          >
+            Close
+          </Button>
+        </Box>
       </Box>
     </Modal>
   );

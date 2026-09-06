@@ -29,6 +29,13 @@ export default function Recent() {
     setTripsArr(trips);
   };
 
+  const handleNewTripModalClose = (id) => {
+    setOpenNewTripModal(false)
+    if(id != null){
+      navigate(`trip/${id}`);
+    } 
+  } 
+  
   useEffect(() => {
     loadTrips();
   }, []);
@@ -48,16 +55,14 @@ export default function Recent() {
                 navigate(`trip/${t.id}`);
               }}
             >
-              <CardContent sx={{ height: "100%" }}>
+              <CardContent sx={{ height: "100%" }} >
                 <Typography variant="h6">{t.tripName}</Typography>
-                <Typography variant="subtitle1">
-                  Participants: {t.participants.join(", ")}
-                </Typography>
               </CardContent>
               <CardActions sx={{ flexDirection: "row-reverse" }}>
                 <Button
                   color="error"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setOpenDeleteModal(true);
                     currTripId.current = t.id;
                   }}
@@ -74,13 +79,16 @@ export default function Recent() {
         color="primary"
         aria-label="add"
         sx={{ position: "fixed", bottom: "80px", right: "50px" }}
+        onClick={() => setOpenNewTripModal(true)}
       >
         <AssignmentAddIcon sx={{ mr: 1 }} />
         New Trip
       </Fab>
       <NewTripModal
         open={openNewTripModal}
-        onClose={() => setOpenNewTripModal(false)}
+        onClose={(id) => {
+          handleNewTripModalClose(id)
+        }}
       />
       <Modal
         open={openDeleteModal}

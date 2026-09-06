@@ -3,17 +3,19 @@ import { v4 as uuid } from "uuid";
 import { useIndexedDB } from "../../shared/indexDBHook";
 import { useRef } from "react";
 
-export default function NewTripModal(open, onClose) {
+export default function NewTripModal({open, onClose}) {
   const tripName = useRef("");
   const { saveJSON } = useIndexedDB();
 
   const handleSave = async () => {
+    if(tripName.current.trim().length == 0) return;
     const newTripJson = {
       tripName: tripName.current,
       expenses: [],
     };
-    await saveJSON(uuid(), JSON.stringify(newTripJson));
-    onClose();
+  const id = uuid();
+    await saveJSON(id, JSON.stringify(newTripJson));
+    onClose(id);
   };
 
   return (
@@ -21,7 +23,7 @@ export default function NewTripModal(open, onClose) {
       open={open}
       onClose={() => {
         tripName.current = "";
-        onClose();
+        onClose(null);
       }}
     >
       <Box
