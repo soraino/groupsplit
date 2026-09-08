@@ -5,12 +5,15 @@ import { useRef } from "react";
 
 export default function NewTripModal({open, onClose}) {
   const tripName = useRef("");
+  const currency = useRef("");
   const { saveJSON } = useIndexedDB();
 
   const handleSave = async () => {
     if(tripName.current.trim().length == 0) return;
     const newTripJson = {
       tripName: tripName.current,
+      currency: currency.current,
+      category: [],
       expenses: [],
     };
   const id = uuid();
@@ -49,6 +52,15 @@ export default function NewTripModal({open, onClose}) {
           sx={{ marginBottom: 2 }}
           onChange={(e) => {
             tripName.current = e.target.value;
+          }}
+        />
+        <TextField
+          fullWidth
+          label="Currency"
+          variant="outlined"
+          sx={{ marginBottom: 2 }}
+          onChange={(e) => {
+            currency.current = e.target.value;
           }}
         />
         <Button variant="contained" sx={{ float: "right" }} onClick={handleSave}>

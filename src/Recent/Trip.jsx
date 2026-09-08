@@ -15,6 +15,7 @@ export default function Trip() {
   const { saveJSON, getJSON } = useIndexedDB();
   const expense = useRef({
     tripName: "",
+    currency: "",
     category: [],
     expenses: [],
   });
@@ -26,8 +27,8 @@ export default function Trip() {
     expense.current.expenses.sort((a, b) => new Date(b.date) - new Date(a.date))
   }
   const handleDeleteExpense = async () => {
-    if(selectedExpenseIdx.current == null) return;
-    expense.current.expenses = expense.current.expenses.filter((val, i) => i != selectedExpenseIdx.current );
+    if (selectedExpenseIdx.current == null) return;
+    expense.current.expenses = expense.current.expenses.filter((val, i) => i != selectedExpenseIdx.current);
     await saveJSON(expenseId, JSON.stringify(expense.current));
     selectedExpenseIdx.current = null;
     setIsOpenDeleteModal(false)
@@ -36,7 +37,7 @@ export default function Trip() {
   const handleUpdateExpenseModalOpen = (idx) => {
     selectedExpense.current = expense.current.expenses[idx];
     selectedExpenseIdx.current = idx;
-    if(selectedExpense.current.isExpense)
+    if (selectedExpense.current.isExpense)
       setIsExpenseModalOpen(true);
     else
       setIsTopupModalOpen(true);
@@ -113,7 +114,7 @@ export default function Trip() {
           alignItems: "flex-end"
         }}>
         <Typography variant="h4" gutterBottom >
-          Group Pool: ${
+          Group Pool: {
             expense.current.expenses.reduce((acc, curr) => {
               if (curr.isExpense == null || curr.isExpense)
                 acc -= curr.total
@@ -122,6 +123,7 @@ export default function Trip() {
               return acc;
             }, 0)
           }
+          {expense.current.currency}
         </Typography>
         <Typography variant="h4" gutterBottom >
           <IconButton onClick={() => { setIsTopupModalOpen(true) }}>
@@ -131,9 +133,9 @@ export default function Trip() {
       </Stack>
       <Divider sx={{ marginBottom: 2 }} />
       {
-        expense.current.expenses.map((expense, idx) =>
+        expense.current.expenses.map((e, idx) =>
           <Box
-            key={`${expense.description}-${idx}-${expense.date}`}
+            key={`${e.description}-${idx}-${e.date}`}
             sx={{ padding: 1 }}
             onClick={() => { handleUpdateExpenseModalOpen(idx) }}
           >
@@ -147,7 +149,7 @@ export default function Trip() {
                     fontSize: "20px",
                     lineHeight: 1,
                   }}>
-                  {dayjs(expense.date).format("MMM").toUpperCase()}
+                  {dayjs(e.date).format("MMM").toUpperCase()}
                 </Typography>
                 <Typography
                   variant="body1"
@@ -157,31 +159,32 @@ export default function Trip() {
                     fontSize: "32px",
                     lineHeight: 1,
                   }}>
-                  {dayjs(expense.date).format("DD")}
+                  {dayjs(e.date).format("DD")}
                 </Typography>
               </Box>
               <Box sx={{ flexGrow: 1 }}>
                 <Grid container>
                   <Grid size={8}>
                     <Typography
-                      variant="h5"
+                      variant="subtitle1"
                       sx={{
-                        textOverflow: "ellipsis",
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
+                        wordWrap: "break-word",
+                        maxWidth: "300px",
+                        lineHeight: 1
                       }}
                       component="div">
-                      {expense.description}
+                      {e.description}
                     </Typography>
                   </Grid>
                   <Grid size={4}>
                     <Typography
                       sx={{ textAlign: "right" }}
-                      variant="h6" component="div"
-                      color={(expense.isExpense == null || expense.isExpense) ?
+                      variant="h6"
+                      component="div"
+                      color={(e.isExpense == null || e.isExpense) ?
                         "error" :
                         "success"}>
-                      ${expense.total}
+                      {e.total} {expense.current.currency}
                     </Typography>
                   </Grid>
                 </Grid>
@@ -191,10 +194,14 @@ export default function Trip() {
                     justifyContent: "space-between",
                     alignItems: "flex-end"
                   }}>
-                  <Typography gutterBottom sx={{ color: 'text.secondary' }}>
-                    {expense.category}
+                  <Typography
+                    gutterBottom
+                    sx={{ color: 'text.secondary' }}
+                    variant="subtitle2">
+                    {e.category}
                   </Typography>
                   <Button
+                  size="small"
                     color="error"
                     onClick={(e) => {
                       e.stopPropagation();
