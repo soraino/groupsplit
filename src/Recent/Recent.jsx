@@ -65,7 +65,7 @@ export default function Recent() {
     await navigator.share({ title: "Expense excel", files: [excelFile] });
 
   }
-  
+
   function canBrowserShareFiles() {
     if (!navigator.share || !navigator.canShare) {
       return false;
@@ -86,23 +86,66 @@ export default function Recent() {
     worksheet.addRow([`${tripData.tripName} Expenses`]);
 
     // creating the header
-    const headerRow = worksheet.addRow(["Date", "Category", "Description", "Total"]);
-    tripData.expenses.forEach(e => {
+    const headerRow = worksheet.addRow(["Description", "Category", "Total"]);
+    worksheet.addRow();
 
-      worksheet.addRow([
-        new Date(e.date),
-        e.isExpense ? e.category : "top up",
-        e.description,
-        e.isExpense ? -e.total : e.total])
-    });
-    const totalCell = worksheet.getCell(`D${worksheet.rowCount + 1}`);
-    totalCell.value = { formula: `SUM(D3:D${tripData.expenses.length + 2})` };
+    tripData.expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const excelPlot = tripData.expenses.reduce((acc, curr) => {
+      if (!acc.ret[curr.date]) {
+        acc.ret[curr.date] = {
+          topups: [],
+          expenses: [],
+          leftovers: acc.leftovers
+        }
+      }
+
+      if (curr.isExpense) {
+        acc.ret[curr.date].expenses.push(curr)
+        acc.ret[curr.date].leftovers += -curr.total
+        acc.leftovers += -curr.total
+      } else {
+        acc.ret[curr.date].topups.push(curr)
+        acc.ret[curr.date].leftovers += curr.total
+        acc.leftovers += curr.total
+      }
+
+      return acc;
+    }, { ret: {}, leftovers: 0 }).ret;
+
+    let prevDayTotal = 0;
+
+    Object.keys(excelPlot).forEach((date, idx, currArr) => {
+      prevDayTotal = excelPlot[date].leftovers;
+      worksheet.addRow([`Day ${idx+1}`, new Date(date), idx == 0 ? 0 : prevDayTotal])
+
+      excelPlot[date].topups.forEach((e) => {
+        worksheet.addRow([
+          e.description,
+          "top up",
+          e.total])
+      })
+
+      excelPlot[date].expenses.forEach((e) => {
+        worksheet.addRow([
+          e.description,
+          e.category,
+          -e.total])
+      })
+
+      if (idx == currArr.length - 1) {
+        worksheet.addRow(['','','']);
+        worksheet.addRow([
+          "Pools Total leftover",
+          "",
+          excelPlot[date].leftovers]);
+      }
+
+    })
 
     headerRow.font = { bold: true };
     headerRow.alignment = { horizontal: 'center' };
-    totalCell.font = { bold: true };
-    worksheet.getColumn('A').numFmt = 'dd-mm-yyyy'; // Date  
-    worksheet.getColumn('D').numFmt = `#,##0.00 "${tripData.currency}"`; // Currency  
+    worksheet.getColumn('C').numFmt = `#,##0.00 "${tripData.currency}"`; // Currency  
     return workbook;
   }
 
