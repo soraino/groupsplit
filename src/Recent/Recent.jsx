@@ -45,38 +45,33 @@ export default function Recent() {
     const excelData = createExcelData(tripData);
     const excelDataBuffer = await excelData.xlsx.writeBuffer();
 
-    if (!canBrowserShareFiles()) {
-      const blob = new Blob([excelDataBuffer], { type: 'application/octet-stream' });
-      // Create Blob and download link  
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'test.xlsx';
-      a.click();
-
-      // Cleanup  
-      URL.revokeObjectURL(url);
-      return;
-    }
     const excelFile = new File(
       [excelDataBuffer],
       `${tripData.tripName} expense.xlsx`,
-      { type: 'application/octet-stream' })
-    await navigator.share({ title: "Expense excel", files: [excelFile] });
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-  }
+    const canShareActualFile = navigator.canShare && navigator.canShare({ files: [excelFile] });
 
-  function canBrowserShareFiles() {
-    if (!navigator.share || !navigator.canShare) {
-      return false;
+    if (canShareActualFile) {
+      try {
+        await navigator.share({ title: "Expense excel", files: [excelFile] });
+        return;
+      } catch (e) {
+        console.log(e);
+        console.log("Can't share for some reason default to download");
+      }
     }
 
-    // Create some test data with a file, to check if the browser supports
-    // sharing it.
-    const testFile = new File(["foo"], "foo.txt", { type: "text/plain" });
-    const data = { files: [testFile] };
+    const blob = new Blob([excelDataBuffer], { type: 'application/octet-stream' });
+    // Create Blob and download link  
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'test.xlsx';
+    a.click();
 
-    return navigator.canShare(data);
+    // Cleanup  
+    URL.revokeObjectURL(url);
   }
 
   function createExcelData(tripData) {
@@ -117,7 +112,7 @@ export default function Recent() {
 
     Object.keys(excelPlot).forEach((date, idx, currArr) => {
       prevDayTotal = excelPlot[date].leftovers;
-      worksheet.addRow([`Day ${idx+1}`, new Date(date), idx == 0 ? 0 : prevDayTotal])
+      worksheet.addRow([`Day ${idx + 1}`, new Date(date), idx == 0 ? 0 : prevDayTotal])
 
       excelPlot[date].topups.forEach((e) => {
         worksheet.addRow([
@@ -134,7 +129,7 @@ export default function Recent() {
       })
 
       if (idx == currArr.length - 1) {
-        worksheet.addRow(['','','']);
+        worksheet.addRow(['', '', '']);
         worksheet.addRow([
           "Pools Total leftover",
           "",
