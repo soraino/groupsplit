@@ -62,7 +62,7 @@ export default function Recent() {
       }
     }
 
-    const blob = new Blob([excelDataBuffer], { type: 'application/octet-stream' });
+    const blob = new Blob([excelDataBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     // Create Blob and download link  
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
