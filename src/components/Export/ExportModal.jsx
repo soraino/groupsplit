@@ -32,24 +32,23 @@ export default function ExportModal({ open, tripId, onClose }) {
             tripData.tripName,
             tripData.currency
         )
-        // const excelDataBuffer = await excelData.xlsx.writeBuffer();
 
-        // const excelFile = new File(
-        //     [excelDataBuffer],
-        //     `${tripData.tripName} expense.xlsx`,
-        //     { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const pdfFile = new File(
+            [pdf.output("blob")],
+            `${tripData.tripName} expense.pdf`,
+            { type: 'application/pdf' });
 
-        // const canShareActualFile = navigator.canShare && navigator.canShare({ files: [excelFile] });
+        const canShareActualFile = navigator.canShare && navigator.canShare({ files: [pdfFile] });
 
-        // if (canShareActualFile) {
-        //     try {
-        //         await navigator.share({ title: "Expense excel", files: [excelFile] });
-        //         return;
-        //     } catch (e) {
-        //         console.log(e);
-        //         console.log("Can't share for some reason default to download");
-        //     }
-        // }
+        if (canShareActualFile) {
+            try {
+                await navigator.share({ title: "Expense excel", files: [pdfFile] });
+                return;
+            } catch (e) {
+                console.log(e);
+                console.log("Can't share for some reason default to download");
+            }
+        }
 
         const blob = new Blob([pdf.output("blob")], { type: 'application/pdf' });
         // Create Blob and download link  
@@ -139,34 +138,28 @@ export default function ExportModal({ open, tripId, onClose }) {
             pdfDoc.text(`Date: ${dayjs(date).format("MMMM DD, YYYY (dddd)")}`, PageConfig.margins.left, yPosition);
             yPosition += 5;
 
-            const allTopUps = prepData[date].topups.map((e) => {
-                return [
+            const tableContent = [];
+            prepData[date].topups.forEach((e) => {
+                tableContent.push([
                     e.description,
                     "top up",
                     e.total]
+                )
             })
-
-            const allExpense = prepData[date].expenses.map((e) => {
-                return [
+            prepData[date].expenses.forEach((e) => {
+                tableContent.push([
                     e.description,
                     e.category,
                     -e.total]
+                )
             })
-            let tableContent = [];
-
-            if (allTopUps.length > 0) {
-                tableContent = [...allTopUps]
-            }
-            if (allExpense.length > 0) {
-                tableContent = [...tableContent, ...allExpense]
-            }
 
             pdfDoc.autoTable({
                 startY: yPosition,
                 head: [["Description", "Category", "Total"]],
                 body: tableContent,
                 theme: "striped",
-                margin: { left: PageConfig.margins.left, right: PageConfig.margins.right },
+                margin: { ...PageConfig.margins },
                 headStyles: {
                     fillColor: PageConfig.colors.primary,
                     textColor: 255,
@@ -189,12 +182,15 @@ export default function ExportModal({ open, tripId, onClose }) {
             pdfDoc.text(`Total pool leftover: ${prepData[date].leftovers} ${currency}`, rightMargin, yPosition, { align: "right" });
 
             prevDayTotal = prepData[date].leftovers;
-            yPosition += 15
 
+            const totalPageLeft = yPosition % (PageConfig.page.height - (PageConfig.margins.top + PageConfig.margins.bottom));
+            if (totalPageLeft > 15)
+                yPosition += 15
+
+            else
+                yPosition += totalPageLeft + (PageConfig.margins.top + PageConfig.margins.bottom)
         })
-
         return pdfDoc;
-
     }
 
     return <Modal
