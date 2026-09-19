@@ -17,7 +17,7 @@ import { Fab } from "@mui/material";
 import NewTripModal from "../components/NewTrip/NewTripModal";
 import AssignmentAddIcon from "@mui/icons-material/AssignmentAdd";
 import { ShareOutlined } from "@mui/icons-material";
-import * as ExcelJs from "exceljs";
+import ExportModal from "../components/Export/ExportModal";
 
 export default function Recent() {
   const { getAllFiles, deleteJSON, getJSON } = useIndexedDB();
@@ -25,6 +25,7 @@ export default function Recent() {
   const [tripsArr, setTripsArr] = useState([]);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openNewTripModal, setOpenNewTripModal] = useState(false);
+  const [openExportModal, setOpenExportModal] = useState(false);
 
   const currTripId = useRef("");
 
@@ -40,109 +41,6 @@ export default function Recent() {
     }
   }
 
-  async function handleShareExcel(tripId) {
-    const tripData = await getJSON(tripId);
-    const excelData = createExcelData(tripData);
-    const excelDataBuffer = await excelData.xlsx.writeBuffer();
-
-    const excelFile = new File(
-      [excelDataBuffer],
-      `${tripData.tripName} expense.xlsx`,
-      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-    const canShareActualFile = navigator.canShare && navigator.canShare({ files: [excelFile] });
-
-    if (canShareActualFile) {
-      try {
-        await navigator.share({ title: "Expense excel", files: [excelFile] });
-        return;
-      } catch (e) {
-        console.log(e);
-        console.log("Can't share for some reason default to download");
-      }
-    }
-
-    const blob = new Blob([excelDataBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    // Create Blob and download link  
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'test.xlsx';
-    a.click();
-
-    // Cleanup  
-    URL.revokeObjectURL(url);
-  }
-
-  function createExcelData(tripData) {
-
-    const workbook = new ExcelJs.Workbook();
-    const worksheet = workbook.addWorksheet("Expenses");
-    worksheet.addRow([`${tripData.tripName} Expenses`]);
-
-    // creating the header
-    const headerRow = worksheet.addRow(["Description", "Category", "Total"]);
-    worksheet.addRow();
-
-    tripData.expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    const excelPlot = tripData.expenses.reduce((acc, curr) => {
-      if (!acc.ret[curr.date]) {
-        acc.ret[curr.date] = {
-          topups: [],
-          expenses: [],
-          leftovers: acc.leftovers
-        }
-      }
-
-      if (curr.isExpense) {
-        acc.ret[curr.date].expenses.push(curr)
-        acc.ret[curr.date].leftovers += -curr.total
-        acc.leftovers += -curr.total
-      } else {
-        acc.ret[curr.date].topups.push(curr)
-        acc.ret[curr.date].leftovers += curr.total
-        acc.leftovers += curr.total
-      }
-
-      return acc;
-    }, { ret: {}, leftovers: 0 }).ret;
-
-    let prevDayTotal = 0;
-
-    Object.keys(excelPlot).forEach((date, idx, currArr) => {
-      prevDayTotal = excelPlot[date].leftovers;
-      worksheet.addRow([`Day ${idx + 1}`, new Date(date), idx == 0 ? 0 : prevDayTotal])
-
-      excelPlot[date].topups.forEach((e) => {
-        worksheet.addRow([
-          e.description,
-          "top up",
-          e.total])
-      })
-
-      excelPlot[date].expenses.forEach((e) => {
-        worksheet.addRow([
-          e.description,
-          e.category,
-          -e.total])
-      })
-
-      if (idx == currArr.length - 1) {
-        worksheet.addRow(['', '', '']);
-        worksheet.addRow([
-          "Pools Total leftover",
-          "",
-          excelPlot[date].leftovers]);
-      }
-
-    })
-
-    headerRow.font = { bold: true };
-    headerRow.alignment = { horizontal: 'center' };
-    worksheet.getColumn('C').numFmt = `#,##0.00 "${tripData.currency}"`; // Currency  
-    return workbook;
-  }
 
   useEffect(() => {
     loadTrips();
@@ -168,7 +66,8 @@ export default function Recent() {
                   <Typography variant="h6">{t.tripName}</Typography>
                   <IconButton onClick={(e) => {
                     e.stopPropagation();
-                    handleShareExcel(t.id);
+                    currTripId.current = t.id;
+                    setOpenExportModal(true);
                   }}>
                     <ShareOutlined />
                   </IconButton>
@@ -179,8 +78,8 @@ export default function Recent() {
                   color="error"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpenDeleteModal(true);
                     currTripId.current = t.id;
+                    setOpenDeleteModal(true);
                   }}
                 >
                   Delete
@@ -206,6 +105,10 @@ export default function Recent() {
           handleNewTripModalClose(id)
         }}
       />
+      <ExportModal
+        open={openExportModal}
+        onClose={() => { setOpenExportModal(false) }}
+        tripId={currTripId.current} />
       <Modal
         open={openDeleteModal}
         onClose={() => {

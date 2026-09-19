@@ -77,10 +77,16 @@ export default function ExpenseModal({ open, expense, category, onClose }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             disabled={disable}
-            defaultValue={expenseDate.current != null? dayjs(expenseDate.current) : null}
+            defaultValue={expenseDate.current != null ? dayjs(expenseDate.current) : null}
             sx={{ marginBottom: 1 }}
             onChange={val => {
               expenseDate.current = val.toJSON()
+            }}
+            slotProps={{
+              textField: {
+                fullWidth: true,
+                size: 'small',
+              },
             }}
           />
         </LocalizationProvider>
@@ -102,7 +108,7 @@ export default function ExpenseModal({ open, expense, category, onClose }) {
             variant="contained"
             onClick={handleSave}
           >
-            {expense == null ? "Add Expense": "Update Expense"}
+            {expense == null ? "Add Expense" : "Update Expense"}
           </Button>
           <Button
             disabled={disable}

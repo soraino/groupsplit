@@ -54,6 +54,12 @@ export default function AddPoolModal({ open, topUp, onClose }) {
                         onChange={val => {
                             topUpDate.current = val.toJSON()
                         }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                        }}
                     />
                 </LocalizationProvider>
                 <CurrencyField
