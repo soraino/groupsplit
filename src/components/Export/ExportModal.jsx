@@ -136,6 +136,11 @@ export default function ExportModal({ open, tripId, onClose }) {
             pdfDoc.setFontSize(PageConfig.fonts.medium);
             pdfDoc.setTextColor(...PageConfig.colors.text);
             pdfDoc.text(`Date: ${dayjs(date).format("MMMM DD, YYYY (dddd)")}`, PageConfig.margins.left, yPosition);
+
+            const prevTotalText = `Previous total: ${prevDayTotal} ${currency}`;
+            const textWidth = pdfDoc.getTextWidth(prevTotalText);
+            const rightColumnX = (PageConfig.page.width - (textWidth + PageConfig.margins.right));
+            pdfDoc.text(prevTotalText, rightColumnX, yPosition);
             yPosition += 5;
 
             const tableContent = [];
