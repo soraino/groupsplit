@@ -42,7 +42,7 @@ export default function ExportModal({ open, tripId, onClose }) {
 
         if (canShareActualFile) {
             try {
-                await navigator.share({ title: "Expense excel", files: [pdfFile] });
+                await navigator.share({ files: [pdfFile] });
                 return;
             } catch (e) {
                 console.log(e);
