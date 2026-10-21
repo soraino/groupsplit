@@ -12,9 +12,6 @@ export default function ExportModal({ open, tripId, onClose }) {
 
     const { getJSON } = useIndexedDB();
 
-    const handleClose = () => {
-        onClose();
-    }
     const handleExport = () => {
         handleShare(tripId);
     }
@@ -55,7 +52,7 @@ export default function ExportModal({ open, tripId, onClose }) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${tripData.tripName} expense.xlsx`;
+        a.download = `${tripData.tripName} expense.pdf`;
         a.click();
 
         // Cleanup  
@@ -125,6 +122,7 @@ export default function ExportModal({ open, tripId, onClose }) {
         yPosition += 13;
 
         let prevDayTotal = 0;
+        console.log(Object.keys(prepData));
         Object.keys(prepData).forEach((date) => {
             if (new Date(date) < new Date(startDate) || new Date(date) > new Date(endDate)) {
                 prevDayTotal = prepData[date].leftovers;
@@ -137,7 +135,7 @@ export default function ExportModal({ open, tripId, onClose }) {
             pdfDoc.setTextColor(...PageConfig.colors.text);
             pdfDoc.text(`Date: ${dayjs(date).format("MMMM DD, YYYY (dddd)")}`, PageConfig.margins.left, yPosition);
 
-            const prevTotalText = `Previous total: ${prevDayTotal} ${currency}`;
+            const prevTotalText = `Previous total: ${prevDayTotal.toFixed(2)} ${currency}`;
             const textWidth = pdfDoc.getTextWidth(prevTotalText);
             const rightColumnX = (PageConfig.page.width - (textWidth + PageConfig.margins.right));
             pdfDoc.text(prevTotalText, rightColumnX, yPosition);
@@ -148,14 +146,14 @@ export default function ExportModal({ open, tripId, onClose }) {
                 tableContent.push([
                     e.description,
                     "top up",
-                    e.total]
+                    e.total.toFixed(2)]
                 )
             })
             prepData[date].expenses.forEach((e) => {
                 tableContent.push([
                     e.description,
                     e.category,
-                    -e.total]
+                    -e.total.toFixed(2)]
                 )
             })
 
@@ -184,7 +182,7 @@ export default function ExportModal({ open, tripId, onClose }) {
             pdfDoc.setFontSize(PageConfig.fonts.default);
             pdfDoc.setFont(undefined, "bold");
             pdfDoc.setTextColor(...PageConfig.colors.text);
-            pdfDoc.text(`Total pool leftover: ${prepData[date].leftovers} ${currency}`, rightMargin, yPosition, { align: "right" });
+            pdfDoc.text(`Total pool leftover: ${prepData[date].leftovers.toFixed(2)} ${currency}`, rightMargin, yPosition, { align: "right" });
 
             prevDayTotal = prepData[date].leftovers;
 

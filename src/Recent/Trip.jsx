@@ -121,7 +121,7 @@ export default function Trip() {
               else
                 acc += curr.total
               return acc;
-            }, 0)
+            }, 0).toFixed(2)
           }
           {expense.current.currency}
         </Typography>
